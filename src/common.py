@@ -36,6 +36,18 @@ def download_unit_test_suite(exercise_id: str, test_id: str) -> dict[str, str]:
 
 
 def call(module: object) -> None:
+    def exception_message(e: Exception) -> str:
+        return f"""
+                    
+START ============================== UNIT TESTING {function_name}() ==============================
+
+THE FOLLOWING EXCEPTION HAS BEEN THROWN:
+
+{e}
+
+END ================================ UNIT TESTING {function_name}() ==============================
+"""
+
     conf = download_test_conf(get_exercise_id())
     for test_id in conf["tests"]:
         test_suite = download_unit_test_suite(get_exercise_id(), test_id)
@@ -44,30 +56,12 @@ def call(module: object) -> None:
                 try:
                     fun = getattr(module, function_name)
                 except Exception as e:
-                    raise AssertionError(f"""
-                    
-START ============================== UNIT TESTING {function_name}() ==============================
-
-MESSAGE OF EXCEPTION:
-
-{str(e)}
-
-END ================================ UNIT TESTING {function_name}() ==============================
-""")
+                    raise AssertionError(exception_message(e)) from None
                 results = SetTimeoutDecorator(test_case["limit"])(fun)(**test_case["in"])
                 if results[1]:
-                    raise TimeoutError(f"Function <<{function_name}>> timed out after {test_case['limit']} seconds")
+                    raise AssertionError(exception_message(TimeoutError(f"Function <<{function_name}>> timed out after {test_case['limit']} seconds")))
                 elif not results[0]:
-                    raise AssertionError(f"""
-                    
-START ============================== UNIT TESTING {function_name}() ==============================
-
-THE FOLLOWING EXCEPTION HAS BEEN THROWN:
-
-
-{results[2]}
-END ================================ UNIT TESTING {function_name}() ==============================
-""")
+                    raise AssertionError(exception_message(results[2]))
                 if results[3] != test_case["out"]:
                     input_text = "\n".join([f"  {line}" for line in json.dumps(test_case['in'], indent=2).splitlines()])
                     raise AssertionError(f"""
