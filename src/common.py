@@ -1,6 +1,6 @@
 import json
 import subprocess
-import sys
+import traceback
 import urllib
 from io import StringIO
 import os
@@ -8,7 +8,7 @@ import urllib.request
 
 from call_function_with_timeout import SetTimeoutDecorator
 
-MASTER_URL = r"https://raw.githubusercontent.com/INBGM0212-2023/exercises/main/week-03/P1031"
+MASTER_URL = rf"https://raw.githubusercontent.com/INBGM0212-2023/exercises/main/week-04/P1041"
 
 
 def get_exercise_id() -> str:
@@ -41,10 +41,33 @@ def call(module: object) -> None:
         test_suite = download_unit_test_suite(get_exercise_id(), test_id)
         for function_name in test_suite:
             for test_case in test_suite[function_name]:
-                print(type(test_case))
-                results = SetTimeoutDecorator(test_case["limit"])(getattr(module, function_name))(**test_case["in"])
+                try:
+                    fun = getattr(module, function_name)
+                except Exception as e:
+                    raise AssertionError(f"""
+                    
+START ============================== UNIT TESTING {function_name}() ==============================
+
+MESSAGE OF EXCEPTION:
+
+{str(e)}
+
+END ================================ UNIT TESTING {function_name}() ==============================
+""")
+                results = SetTimeoutDecorator(test_case["limit"])(fun)(**test_case["in"])
                 if results[1]:
                     raise TimeoutError(f"Function <<{function_name}>> timed out after {test_case['limit']} seconds")
+                elif not results[0]:
+                    raise AssertionError(f"""
+                    
+START ============================== UNIT TESTING {function_name}() ==============================
+
+THE FOLLOWING EXCEPTION HAS BEEN THROWN:
+
+
+{results[2]}
+END ================================ UNIT TESTING {function_name}() ==============================
+""")
                 if results[3] != test_case["out"]:
                     input_text = "\n".join([f"  {line}" for line in json.dumps(test_case['in'], indent=2).splitlines()])
                     raise AssertionError(f"""
