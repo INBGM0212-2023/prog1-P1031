@@ -8,7 +8,7 @@ import urllib.request
 
 from call_function_with_timeout import SetTimeoutDecorator
 
-MASTER_URL = rf"https://raw.githubusercontent.com/INBGM0212-2023/exercises/main/week-04/P1041"
+MASTER_URL = rf"https://raw.githubusercontent.com/INBGM0212-2023/exercises/main/week-03/P1031"
 
 
 def get_exercise_id() -> str:
